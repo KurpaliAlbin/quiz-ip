@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interattivo: Indirizzamento IP e Classful</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --correct-text: #15803d;
+            --incorrect-bg: #fee2e2;
+            --incorrect-border: #ef4444;
+            --incorrect-text: #b91c1c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 20px 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 24px;
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .score-board {
+            position: sticky;
+            top: 10px;
+            z-index: 10;
+            background: #ffffff;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .score-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .score-val {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .btn-reset {
+            background-color: #f1f5f9;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            background-color: #e2e8f0;
+        }
+
+        .question-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background: #ffffff;
+            transition: border-color 0.2s;
+        }
+
+        .question-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .badge-practice {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-btn {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* Risposte Verificate */
+        .option-btn.selected-correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: var(--correct-text) !important;
+            font-weight: 600;
+        }
+
+        .option-btn.selected-incorrect {
+            background-color: var(--incorrect-bg) !important;
+            border-color: var(--incorrect-border) !important;
+            color: var(--incorrect-text) !important;
+            font-weight: 600;
+        }
+
+        .option-btn.show-correct {
+            border-color: var(--correct-border) !important;
+            background-color: #f0fdf4 !important;
+            color: var(--correct-text) !important;
+        }
+
+        .explanation {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            display: none;
+        }
+
+        .explanation.visible {
+            display: block;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Quiz Interattivo: Indirizzamento IP e Classful</h1>
+        <p class="subtitle">Seleziona la risposta per ogni domanda per verificare immediatamente l'esattezza.</p>
+    </header>
+
+    <div class="score-board">
+        <div class="score-text">Punteggio: <span class="score-val" id="score">0</span> / <span id="total-questions">18</span></div>
+        <button class="btn-reset" onclick="resetQuiz()">Ricomincia Quiz</button>
+    </div>
+
+    <div id="quiz-container">
+        <!-- Le domande verranno inserite dinamicamente tramite JS -->
+    </div>
+
+    <footer>
+        <p>Sistemi e Reti — Modulo Indirizzamento IP</p>
+    </footer>
+</div>
+
+<script>
+const quizData = [
+    {
+        id: 1,
+        isPractice: false,
+        question: "Da quanti bit è costituito un indirizzo IPv4?",
+        options: [
+            "A) 16 bit",
+            "B) 32 bit",
+            "C) 64 bit",
+            "D) 128 bit"
+        ],
+        correct: 1,
+        explanation: "Un indirizzo IPv4 è formato da 32 bit, divisi in 4 ottetti separati da punti."
+    },
+    {
+        id: 2,
+        isPractice: false,
+        question: "Quale autorità gestisce l'assegnazione degli indirizzi IP su Internet?",
+        options: [
+            "A) ICANN, tramite lo IANA",
+            "B) Il singolo ISP",
+            "C) Il router di casa",
+            "D) Il RIPE, in modo indipendente da tutti"
+        ],
+        correct: 0,
+        explanation: "L'ICANN tramite lo IANA gestisce l'allocazione globale, delegando poi ai RIR regionali (come RIPE in Europa)."
+    },
+    {
+        id: 3,
+        isPractice: false,
+        question: "In un indirizzo IP, cosa rappresentano il Net-ID e l'Host-ID?",
+        options: [
+            "A) Net-ID = il dispositivo, Host-ID = la rete",
+            "B) Net-ID = la rete, Host-ID = il dispositivo all'interno della rete",
+            "C) Sono due nomi per la stessa cosa",
+            "D) Net-ID = il provider, Host-ID = il router"
+        ],
+        correct: 1,
+        explanation: "I bit del Net-ID identificano la specifica rete, mentre quelli dell'Host-ID identificano il singolo dispositivo dentro la rete."
+    },
+    {
+        id: 4,
+        isPractice: true,
+        question: "A quale classe appartiene l'indirizzo 10.40.80.3?",
+        options: [
+            "A) Classe A",
+            "B) Classe B",
+            "C) Classe C",
+            "D) Classe D"
+        ],
+        correct: 0,
+        explanation: "Il primo ottetto è 10, che rientra nell'intervallo 0-127 riservato alla Classe A."
+    },
+    {
+        id: 5,
+        isPractice: true,
+        question: "A quale classe appartiene l'indirizzo 172.16.112.10?",
+        options: [
+            "A) Classe A",
+            "B) Classe B",
+            "C) Classe C",
+            "D) Classe E"
+        ],
+        correct: 1,
+        explanation: "Il primo ottetto è 172, che rientra nell'intervallo 128-191 riservato alla Classe B."
+    },
+    {
+        id: 6,
+        isPractice: true,
+        question: "A quale classe appartiene l'indirizzo 192.168.100.1?",
+        options: [
+            "A) Classe A",
+            "B) Classe B",
+            "C) Classe C",
+            "D) Classe D"
+        ],
+        correct: 2,
+        explanation: "Il primo ottetto è 192, che rientra nell'intervallo 192-223 riservato alla Classe C."
+    },
+    {
+        id: 7,
+        isPractice: false,
+        question: "Con quali bit iniziano, in binario, gli indirizzi di classe C?",
+        options: [
+            "A) 0",
+            "B) 10",
+            "C) 110",
+            "D) 1110"
+        ],
+        correct: 2,
+        explanation: "Classe A inizia con 0, Classe B con 10, Classe C con 110, Classe D con 1110, Classe E con 1111."
+    },
+    {
+        id: 8,
+        isPractice: false,
+        question: "Quanti host si possono assegnare al massimo in una rete di classe C?",
+        options: [
+            "A) 256",
+            "B) 254",
+            "C) 65.534",
+            "D) 16.777.214"
+        ],
+        correct: 1,
+        explanation: "Con 8 bit dedicati all'host si hanno 2^8 = 256 combinazioni, a cui sottrarre l'indirizzo di rete e di broadcast (256 - 2 = 254)."
+    },
+    {
+        id: 9,
+        isPractice: false,
+        question: "A cosa serve la classe D (224-239.x.x.x)?",
+        options: [
+            "A) Reti molto grandi",
+            "B) Reti piccole",
+            "C) Indirizzi multicast",
+            "D) Usi futuri (riservata)"
+        ],
+        correct: 2,
+        explanation: "La classe D è riservata alle comunicazioni Multicast (invio da uno a molti dispositivi selezionati)."
+    },
+    {
+        id: 10,
+        isPractice: true,
+        question: "Qual è l'indirizzo di rete di un host con IP 192.168.5.25 e maschera 255.255.255.0 (AND logico)?",
+        options: [
+            "A) 192.168.5.255",
+            "B) 192.168.5.25",
+            "C) 192.168.0.0",
+            "D) 192.168.5.0"
+        ],
+        correct: 3,
+        explanation: "Eseguendo l'operazione AND tra IP e maschera, la parte di Host-ID (l'ultimo ottetto) viene azzerata, ottenendo 192.168.5.0."
+    },
+    {
+        id: 11,
+        isPractice: true,
+        question: "Qual è l'indirizzo di broadcast della rete 172.16.112.0 con maschera 255.255.255.0?",
+        options: [
+            "A) 172.16.112.1",
+            "B) 172.16.112.254",
+            "C) 172.16.112.255",
+            "D) 172.16.255.255"
+        ],
+        correct: 2,
+        explanation: "L'indirizzo di broadcast si ottiene ponendo a '1' tutti i bit dedicati all'Host-ID (l'ultimo ottetto diventa 255)."
+    },
+    {
+        id: 12,
+        isPractice: true,
+        question: "L'host A1 (196.13.1.1) invia un pacchetto a B1 (196.13.2.1), entrambi con maschera 255.255.255.0. Cosa succede?",
+        options: [
+            "A) Consegna diretta sulla stessa interfaccia",
+            "B) Il pacchetto viene scartato",
+            "C) Il pacchetto viene inviato al gateway di default (router R)",
+            "D) Il pacchetto viene inviato in broadcast"
+        ],
+        correct: 2,
+        explanation: "Poiché i Net-ID differiscono (196.13.1.0 e 196.13.2.0), si tratta di reti diverse e la consegna deve avvenire indirettamente tramite gateway."
+    },
+    {
+        id: 13,
+        isPractice: false,
+        question: "Quanti indirizzi IPv4 esistono in totale?",
+        options: [
+            "A) Circa 65 mila",
+            "B) Circa 16 milioni",
+            "C) Più di 4 miliardi (2^32)",
+            "D) Circa 340 miliardi di miliardi"
+        ],
+        correct: 2,
+        explanation: "Essendo composto da 32 bit, lo spazio d'indirizzamento di IPv4 è di 2^32 = 4.294.967.296 indirizzi."
+    },
+    {
+        id: 14,
+        isPractice: true,
+        question: "Un'azienda ha circa 1000 computer. Con il classful, quale rete le conviene richiedere e che problema nasce?",
+        options: [
+            "A) Classe C, e va benissimo così",
+            "B) Classe B, con un grande spreco di indirizzi",
+            "C) Classe A, con un piccolo spreco",
+            "D) Classe D, per il multicast"
+        ],
+        correct: 1,
+        explanation: "La classe C permette solo 254 host (troppo piccola). È necessaria una classe B (65.534 host), sprecando così oltre 64.000 indirizzi."
+    },
+    {
+        id: 15,
+        isPractice: false,
+        question: "Perché le reti di classe A sono considerate un problema nel classful?",
+        options: [
+            "A) Sono troppo grandi e poche organizzazioni ne hanno bisogno",
+            "B) Sono troppo piccole",
+            "C) Non funzionano con i router",
+            "D) Costano meno delle altre"
+        ],
+        correct: 0,
+        explanation: "Ogni rete di classe A alloca 16.777.216 indirizzi: una dimensione enorme inutilizzabile appieno da una singola organizzazione."
+    },
+    {
+        id: 16,
+        isPractice: false,
+        question: "Quale effetto hanno i problemi del classful sui router degli ISP?",
+        options: [
+            "A) Diventano più veloci",
+            "B) Non hanno più bisogno di indirizzi IP",
+            "C) Possono gestire solo la classe D",
+            "D) Devono usare tabelle di instradamento inutilmente ampie"
+        ],
+        correct: 3,
+        explanation: "L'assegnazione di molteplici blocchi di Classe C per compensare la mancanza di flessibilità genera un'esplosione delle rotte nelle tabelle di routing."
+    },
+    {
+        id: 17,
+        isPractice: false,
+        question: "Quale nuovo schema di indirizzamento ha introdotto l'IETF dal 1993 per sostituire il classful?",
+        options: [
+            "A) Classful 2.0",
+            "B) CIDR (Classless Inter-Domain Routing)",
+            "C) ARP",
+            "D) Multicast"
+        ],
+        correct: 1,
+        explanation: "Il CIDR (Classless Inter-Domain Routing) ha introdotto la notazione a lunghezza di prefisso variabile, superando le classi."
+    },
+    {
+        id: 18,
+        isPractice: false,
+        question: "Quando è avvenuto l'esaurimento degli indirizzi IPv4?",
+        options: [
+            "A) 1 gennaio 1993",
+            "B) 3 febbraio 2001",
+            "C) 3 febbraio 2011",
+            "D) 2 dicembre 2010"
+        ],
+        correct: 2,
+        explanation: "La riserva centrale di indirizzi IPv4 gestita da IANA si è ufficialmente esaurita il 3 febbraio 2011."
+    }
+];
+
+let score = 0;
+const answeredStatus = new Array(quizData.length).fill(false);
+
+function renderQuiz() {
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = '';
+
+    quizData.forEach((q, qIndex) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.id = `q-card-${qIndex}`;
+
+        const practiceBadge = q.isPractice ? '<span class="badge-practice">Pratica</span>' : '';
+
+        card.innerHTML = `
+            <div class="question-title">
+                <span>${q.id}.</span>
+                ${practiceBadge}
+                <span>${q.question}</span>
+            </div>
+            <div class="options-list">
+                ${q.options.map((opt, oIndex) => `
+                    <button class="option-btn" id="opt-${qIndex}-${oIndex}" onclick="checkAnswer(${qIndex}, ${oIndex})">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+            <div class="explanation" id="expl-${qIndex}">
+                <div class="explanation-title">Spiegazione:</div>
+                <div>${q.explanation}</div>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+
+    document.getElementById('total-questions').innerText = quizData.length;
+}
+
+function checkAnswer(qIndex, selectedIndex) {
+    if (answeredStatus[qIndex]) return; // Domanda già risposta
+
+    answeredStatus[qIndex] = true;
+    const q = quizData[qIndex];
+    const isCorrect = selectedIndex === q.correct;
+
+    if (isCorrect) {
+        score++;
+        document.getElementById(`opt-${qIndex}-${selectedIndex}`).classList.add('selected-correct');
+    } else {
+        document.getElementById(`opt-${qIndex}-${selectedIndex}`).classList.add('selected-incorrect');
+        // Evidenzia la risposta corretta
+        document.getElementById(`opt-${qIndex}-${q.correct}`).classList.add('show-correct');
+    }
+
+    // Disabilita tutti i bottoni della domanda
+    q.options.forEach((_, oIndex) => {
+        document.getElementById(`opt-${qIndex}-${oIndex}`).disabled = true;
+    });
+
+    // Mostra la spiegazione
+    document.getElementById(`expl-${qIndex}`).classList.add('visible');
+
+    // Aggiorna punteggio
+    document.getElementById('score').innerText = score;
+}
+
+function resetQuiz() {
+    score = 0;
+    answeredStatus.fill(false);
+    document.getElementById('score').innerText = score;
+    renderQuiz();
+}
+
+// Inizializza il quiz
+renderQuiz();
+</script>
+
+</body>
+</html>
